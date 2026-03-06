@@ -1,0 +1,1302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gossip or Drama? - The Personality Quiz</title>
+  <style>
+    /* ===== RESET & BASE ===== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #FFF8F0;
+      --bg-card: #FFFFFF;
+      --accent-pink: #FF3B6B;
+      --accent-purple: #8B5CF6;
+      --accent-yellow: #FBBF24;
+      --accent-blue: #3B82F6;
+      --accent-green: #10B981;
+      --accent-orange: #F97316;
+      --text-dark: #1F1235;
+      --text-mid: #4A4458;
+      --text-light: #8B839C;
+      --witch-color: #8B5CF6;
+      --owl-color: #3B82F6;
+      --cat-color: #F97316;
+      --pastor-color: #10B981;
+      --player-1: #FF3B6B;
+      --player-2: #3B82F6;
+      --player-3: #10B981;
+      --player-4: #FBBF24;
+      --radius: 16px;
+      --shadow: 0 4px 24px rgba(31, 18, 53, 0.08);
+      --shadow-lg: 0 8px 40px rgba(31, 18, 53, 0.12);
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text-dark);
+      min-height: 100dvh;
+      display: flex;
+      justify-content: center;
+      overflow-x: hidden;
+    }
+
+    #app {
+      width: 100%;
+      max-width: 560px;
+      padding: 1.5rem;
+      position: relative;
+    }
+
+    /* ===== SCREENS ===== */
+    .screen {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      opacity: 0;
+      transform: translateY(20px);
+      min-height: calc(100dvh - 3rem);
+    }
+    .screen.active {
+      display: flex;
+      animation: screenIn 0.45s ease-out forwards;
+    }
+    @keyframes screenIn {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ===== TYPOGRAPHY ===== */
+    h1 {
+      font-size: 2.5rem;
+      font-weight: 900;
+      line-height: 1.1;
+      text-align: center;
+      background: linear-gradient(135deg, var(--accent-pink), var(--accent-purple));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    h2 {
+      font-size: 1.6rem;
+      font-weight: 800;
+      text-align: center;
+      margin-bottom: 0.5rem;
+    }
+    h3 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      line-height: 1.4;
+    }
+
+    /* ===== BUTTONS ===== */
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent-pink), var(--accent-purple));
+      color: white;
+      border: none;
+      padding: 1rem 2.5rem;
+      font-size: 1.15rem;
+      font-weight: 700;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+      box-shadow: 0 4px 16px rgba(255, 59, 107, 0.3);
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 24px rgba(255, 59, 107, 0.4); }
+    .btn-primary:active { transform: translateY(1px); }
+    .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
+
+    .btn-secondary {
+      background: transparent;
+      color: var(--accent-purple);
+      border: 2px solid var(--accent-purple);
+      padding: 0.75rem 1.5rem;
+      font-size: 1rem;
+      font-weight: 600;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+    .btn-secondary:hover { background: var(--accent-purple); color: white; }
+
+    /* ===== SPLASH SCREEN ===== */
+    #splash {
+      justify-content: center;
+      gap: 1.5rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .splash-emoji {
+      position: absolute;
+      font-size: 2rem;
+      opacity: 0.15;
+      animation: floatEmoji 6s ease-in-out infinite;
+      pointer-events: none;
+    }
+    @keyframes floatEmoji {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      33% { transform: translateY(-18px) rotate(8deg); }
+      66% { transform: translateY(12px) rotate(-5deg); }
+    }
+    .tagline {
+      font-size: 1.15rem;
+      color: var(--text-mid);
+      text-align: center;
+      max-width: 320px;
+    }
+    .splash-types {
+      display: flex;
+      gap: 1rem;
+      margin-top: 0.5rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .splash-type {
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 0.4rem 0.8rem;
+      border-radius: 999px;
+      background: white;
+      box-shadow: var(--shadow);
+    }
+
+    /* ===== MODE SELECT ===== */
+    #mode-select { justify-content: center; gap: 2rem; }
+    .mode-cards { display: flex; gap: 1rem; width: 100%; }
+    .mode-card {
+      flex: 1;
+      background: var(--bg-card);
+      border: 3px solid transparent;
+      border-radius: var(--radius);
+      padding: 2rem 1rem;
+      text-align: center;
+      cursor: pointer;
+      transition: transform 0.15s, border-color 0.2s, box-shadow 0.2s;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .mode-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); border-color: var(--accent-purple); }
+    .mode-icon { font-size: 2.5rem; }
+    .mode-title { font-size: 1.2rem; font-weight: 800; }
+    .mode-desc { font-size: 0.9rem; color: var(--text-light); }
+
+    /* ===== ADD PLAYERS ===== */
+    #add-players { justify-content: center; gap: 1.5rem; }
+    .player-inputs { display: flex; flex-direction: column; gap: 0.75rem; width: 100%; }
+    .player-input-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      background: var(--bg-card);
+      border-radius: var(--radius);
+      padding: 0.75rem 1rem;
+      box-shadow: var(--shadow);
+      animation: slideRow 0.3s ease-out;
+    }
+    @keyframes slideRow {
+      from { opacity: 0; transform: translateX(-20px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+    .player-dot {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .player-input-row input {
+      flex: 1;
+      border: none;
+      outline: none;
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--text-dark);
+      background: transparent;
+    }
+    .player-input-row input::placeholder { color: var(--text-light); font-weight: 400; }
+    .remove-player {
+      background: none;
+      border: none;
+      font-size: 1.2rem;
+      color: var(--text-light);
+      cursor: pointer;
+      padding: 0.25rem;
+      line-height: 1;
+      transition: color 0.15s;
+    }
+    .remove-player:hover { color: var(--accent-pink); }
+    .player-actions { display: flex; gap: 1rem; align-items: center; }
+
+    /* ===== QUIZ SCREEN ===== */
+    #quiz { gap: 1.25rem; padding-top: 1rem; }
+    .progress-bar {
+      width: 100%;
+      height: 8px;
+      background: #E8E4EF;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent-pink), var(--accent-purple));
+      border-radius: 999px;
+      transition: width 0.4s ease-out;
+      width: 0%;
+    }
+    .question-counter {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-light);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .player-indicator {
+      font-size: 1rem;
+      font-weight: 700;
+      padding: 0.5rem 1.25rem;
+      border-radius: 999px;
+      color: white;
+      transition: background 0.3s;
+      display: none;
+    }
+    .player-indicator.visible { display: inline-block; animation: popIn 0.3s ease-out; }
+    @keyframes popIn {
+      0% { transform: scale(0.8); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .question-card {
+      background: var(--bg-card);
+      border-radius: var(--radius);
+      padding: 1.75rem 1.5rem;
+      box-shadow: var(--shadow);
+      width: 100%;
+      text-align: center;
+    }
+    .question-card.entering { animation: cardFlip 0.35s ease-out; }
+    @keyframes cardFlip {
+      0% { opacity: 0; transform: scale(0.92) translateY(10px); }
+      100% { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .answers {
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+      width: 100%;
+    }
+    .answer-btn {
+      background: var(--bg-card);
+      border: 3px solid #E8E4EF;
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem;
+      font-size: 1rem;
+      font-weight: 500;
+      text-align: left;
+      cursor: pointer;
+      transition: transform 0.12s, border-color 0.15s, box-shadow 0.15s, background 0.15s;
+      line-height: 1.35;
+    }
+    .answer-btn:hover { transform: translateY(-2px); box-shadow: var(--shadow); border-color: var(--accent-purple); }
+    .answer-btn:active { transform: translateY(1px); }
+    .answer-btn:nth-child(1) { border-left: 5px solid var(--accent-pink); }
+    .answer-btn:nth-child(2) { border-left: 5px solid var(--accent-blue); }
+    .answer-btn:nth-child(3) { border-left: 5px solid var(--accent-purple); }
+    .answer-btn:nth-child(4) { border-left: 5px solid var(--accent-yellow); }
+    .answer-btn.selected {
+      border-color: var(--accent-pink);
+      background: #FFF0F3;
+    }
+
+    /* Group mode: player tabs under question */
+    .player-tabs {
+      display: flex;
+      gap: 0.5rem;
+      width: 100%;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .player-tab {
+      font-size: 0.8rem;
+      font-weight: 600;
+      padding: 0.35rem 0.85rem;
+      border-radius: 999px;
+      border: 2px solid #E8E4EF;
+      background: white;
+      color: var(--text-light);
+      transition: all 0.2s;
+    }
+    .player-tab.active {
+      color: white;
+      border-color: transparent;
+    }
+    .player-tab.done {
+      opacity: 0.5;
+    }
+    .player-tab.done::after {
+      content: " \u2713";
+    }
+
+    /* ===== RESULTS ===== */
+    #results { gap: 1.5rem; padding-top: 1rem; padding-bottom: 3rem; }
+    .results-title {
+      font-size: 1.8rem;
+      font-weight: 900;
+      text-align: center;
+      background: linear-gradient(135deg, var(--accent-pink), var(--accent-purple));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .graph-wrapper {
+      width: 100%;
+      aspect-ratio: 1;
+      max-width: 500px;
+      position: relative;
+    }
+    .graph-wrapper canvas {
+      width: 100%;
+      height: 100%;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-lg);
+    }
+    .result-cards {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      width: 100%;
+    }
+    .result-card {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      background: var(--bg-card);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      box-shadow: var(--shadow);
+      opacity: 0;
+      transform: translateY(20px);
+      animation: revealCard 0.5s ease-out forwards;
+    }
+    @keyframes revealCard {
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .result-card-icon {
+      font-size: 2.2rem;
+      flex-shrink: 0;
+    }
+    .result-card-info { flex: 1; }
+    .result-card-name {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--text-light);
+    }
+    .result-card-type {
+      font-size: 1.2rem;
+      font-weight: 800;
+    }
+    .result-card-tagline {
+      font-size: 0.85rem;
+      color: var(--text-mid);
+      margin-top: 0.15rem;
+    }
+    .result-card-dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .note-section {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      width: 100%;
+    }
+    .note-input {
+      width: 100%;
+      padding: 0.875rem 1rem;
+      border: 2px solid #E8E4EF;
+      border-radius: var(--radius);
+      font-family: inherit;
+      font-size: 0.95rem;
+      color: var(--text-dark);
+      background: var(--bg-card);
+      resize: none;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .note-input:focus { border-color: var(--accent-purple); }
+    .note-bubble {
+      background: var(--bg-card);
+      border-radius: var(--radius);
+      padding: 0.75rem 1rem;
+      box-shadow: var(--shadow);
+      margin-top: 0.25rem;
+      font-size: 0.9rem;
+      color: var(--text-mid);
+      font-style: italic;
+      border-left: 3px solid #E8E4EF;
+    }
+    .results-actions {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .solo-name-input {
+      display: flex;
+      justify-content: center;
+      width: 100%;
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 480px) {
+      #app { padding: 1rem; }
+      h1 { font-size: 2rem; }
+      h2 { font-size: 1.35rem; }
+      .mode-cards { flex-direction: column; }
+      .answer-btn { font-size: 0.95rem; padding: 0.875rem 1rem; }
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+
+    <!-- ===== SPLASH ===== -->
+    <div id="splash" class="screen active">
+      <div class="splash-emoji" style="top:8%;left:8%;animation-delay:0s">&#x1F9D9;</div>
+      <div class="splash-emoji" style="top:12%;right:12%;animation-delay:1.5s">&#x1F989;</div>
+      <div class="splash-emoji" style="bottom:20%;left:10%;animation-delay:3s">&#x1F408;</div>
+      <div class="splash-emoji" style="bottom:15%;right:8%;animation-delay:4.5s">&#x1F607;</div>
+      <div class="splash-emoji" style="top:40%;left:3%;animation-delay:2s;font-size:1.5rem">&#x2728;</div>
+      <div class="splash-emoji" style="top:35%;right:5%;animation-delay:0.8s;font-size:1.5rem">&#x1F525;</div>
+      <h1>Gossip<br>or Drama?</h1>
+      <p class="tagline">Find out which of 4 personality types you and your friends really are</p>
+      <div class="splash-types">
+        <span class="splash-type" style="color:var(--witch-color)">&#x1F9D9; Witch</span>
+        <span class="splash-type" style="color:var(--owl-color)">&#x1F989; Owl</span>
+        <span class="splash-type" style="color:var(--cat-color)">&#x1F408; House Cat</span>
+        <span class="splash-type" style="color:var(--pastor-color)">&#x1F607; Pastor</span>
+      </div>
+      <button class="btn-primary" onclick="showScreen('mode-select')">Let's Go</button>
+    </div>
+
+    <!-- ===== MODE SELECT ===== -->
+    <div id="mode-select" class="screen">
+      <h2>How do you want to play?</h2>
+      <div class="mode-cards">
+        <button class="mode-card" onclick="showScreen('solo-name')">
+          <span class="mode-icon">&#x1F9D1;</span>
+          <span class="mode-title">Just Me</span>
+          <span class="mode-desc">Find out your type</span>
+        </button>
+        <button class="mode-card" onclick="showScreen('add-players')">
+          <span class="mode-icon">&#x1F46B;</span>
+          <span class="mode-title">Group Mode</span>
+          <span class="mode-desc">Play with 2-4 friends</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ===== SOLO NAME ===== -->
+    <div id="solo-name" class="screen" style="justify-content:center;gap:2rem">
+      <h2>What's your name?</h2>
+      <div class="solo-name-input">
+        <div class="player-input-row" style="max-width:320px">
+          <div class="player-dot" style="background:var(--player-1)"></div>
+          <input type="text" id="solo-name-input" placeholder="Enter your name" maxlength="20" onkeydown="if(event.key==='Enter')startSoloWithName()" oninput="document.getElementById('solo-start-btn').disabled=!this.value.trim()">
+        </div>
+      </div>
+      <button class="btn-primary" id="solo-start-btn" onclick="startSoloWithName()" disabled>Start Quiz</button>
+    </div>
+
+    <!-- ===== ADD PLAYERS ===== -->
+    <div id="add-players" class="screen">
+      <h2>Who's Playing?</h2>
+      <p style="color:var(--text-light);text-align:center;margin-bottom:0.5rem">Add 2-4 players</p>
+      <div class="player-inputs" id="player-inputs"></div>
+      <div class="player-actions">
+        <button class="btn-secondary" id="add-player-btn" onclick="addPlayerField()">+ Add Player</button>
+        <button class="btn-primary" id="start-quiz-btn" onclick="startGroupQuiz()" disabled>Start Quiz</button>
+      </div>
+    </div>
+
+    <!-- ===== QUIZ ===== -->
+    <div id="quiz" class="screen">
+      <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+      <div class="question-counter" id="question-counter"></div>
+      <div class="player-tabs" id="player-tabs"></div>
+      <div class="question-card" id="question-card">
+        <h3 id="question-text"></h3>
+      </div>
+      <div class="answers" id="answers"></div>
+    </div>
+
+    <!-- ===== RESULTS ===== -->
+    <div id="results" class="screen">
+      <div class="results-title">The Results Are In...</div>
+      <div class="graph-wrapper">
+        <canvas id="graph-canvas"></canvas>
+      </div>
+      <div class="result-cards" id="result-cards"></div>
+      <div class="note-section">
+        <h3 style="text-align:center;margin-bottom:0.5rem">Leave a note</h3>
+        <textarea id="result-note" class="note-input" placeholder="Any thoughts? Leave a message for others to see..." maxlength="200" rows="2"></textarea>
+        <button class="btn-secondary" onclick="saveNote()" id="save-note-btn" style="align-self:center">Save Note</button>
+      </div>
+      <div class="results-actions">
+        <button class="btn-primary" onclick="restart()">Play Again</button>
+        <button class="btn-secondary" onclick="showAllResults()">See All Results</button>
+      </div>
+    </div>
+
+    <!-- ===== ALL RESULTS ===== -->
+    <div id="all-results" class="screen">
+      <div class="results-title">Everyone's Results</div>
+      <p style="color:var(--text-light);text-align:center;margin-bottom:0.5rem" id="all-results-count"></p>
+      <div class="graph-wrapper">
+        <canvas id="all-graph-canvas"></canvas>
+      </div>
+      <div class="result-cards" id="all-result-cards"></div>
+      <div class="results-actions">
+        <button class="btn-primary" onclick="restart()">Play Again</button>
+        <button class="btn-secondary" onclick="clearAllResults()" style="border-color:var(--accent-pink);color:var(--accent-pink)">Clear History</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* ===== DATA ===== */
+    const PLAYER_COLORS = ['#FF3B6B', '#3B82F6', '#10B981', '#FBBF24'];
+
+    const TYPES = {
+      witch: {
+        name: 'Witch',
+        emoji: '\u{1F9D9}',
+        color: '#8B5CF6',
+        tagline: 'Stirring the cauldron of chaos',
+        description: "Always stirring the pot, muttering incantations over group chats, and thriving in beautiful chaos. Exciting but dangerous in large groups. There's a reason witches live alone in the woods."
+      },
+      owl: {
+        name: 'Owl',
+        emoji: '\u{1F989}',
+        color: '#3B82F6',
+        tagline: 'Watching from above, knowing everything',
+        description: "Removed from the fray, hyper-vigilant, quiet until you're with your inner circle... then it's all \"who? who?\" Peaceful from a distance, but make no mistake \u2014 you are a predator."
+      },
+      housecat: {
+        name: 'House Cat',
+        emoji: '\u{1F408}',
+        color: '#F97316',
+        tagline: 'Knocking things off tables since forever',
+        description: "Aloof, superior, and completely unaware of the destruction in your wake. You knock emotional vases off shelves and walk away without looking back. Sweet, but sometimes a bit much."
+      },
+      pastor: {
+        name: 'Pastor',
+        emoji: '\u{1F607}',
+        color: '#10B981',
+        tagline: 'At peace... suspiciously so',
+        description: "A genuinely good person, at peace with the world. Intelligent, grounded, and above the fray. Kinda boring at parties. Might have deep, dark secrets that nobody will ever find out."
+      }
+    };
+
+    const QUESTIONS = [
+      // Gossip Q1
+      {
+        axis: 'gossip',
+        text: "Your coworker just got back from a \"doctor's appointment\" that lasted 4 hours. You...",
+        choices: [
+          { text: "Don't even notice they were gone", score: 0 },
+          { text: "Notice but figure it's none of your business", score: 1 },
+          { text: "Casually ask how it went, hoping for details", score: 2 },
+          { text: "Immediately text your work bestie: \"There is NO way that was a doctor\"", score: 3 }
+        ]
+      },
+      // Drama Q1
+      {
+        axis: 'drama',
+        text: "You strongly disagree with something someone said at dinner. You...",
+        choices: [
+          { text: "Keep it to yourself \u2014 not worth the energy", score: 0 },
+          { text: "Gently offer a different perspective when there's an opening", score: 1 },
+          { text: "Challenge them directly \u2014 healthy debate is good, right?", score: 2 },
+          { text: "Stand up, slam the table: \"I will NOT sit here and listen to this\"", score: 3 }
+        ]
+      },
+      // Gossip Q2
+      {
+        axis: 'gossip',
+        text: "You overhear a juicy conversation between strangers at a coffee shop. You...",
+        choices: [
+          { text: "Put your headphones in \u2014 not your business", score: 0 },
+          { text: "Can't help but listen, but you'd never tell anyone", score: 1 },
+          { text: "Listen intently and retell it later as a \"hypothetical\"", score: 2 },
+          { text: "Already live-texting the play-by-play to three group chats", score: 3 }
+        ]
+      },
+      // Drama Q2
+      {
+        axis: 'drama',
+        text: "Your friend asks for honest feedback on their new haircut... which is not great. You...",
+        choices: [
+          { text: "\"It looks great!\" (a little white lie never hurt)", score: 0 },
+          { text: "\"Different is fun! It'll grow on you\"", score: 1 },
+          { text: "\"Honestly? Not your best look, but you'll survive\"", score: 2 },
+          { text: "\"Who did this to you? We need to file a police report\"", score: 3 }
+        ]
+      },
+      // Gossip Q3
+      {
+        axis: 'gossip',
+        text: "A friend posts a cryptic \"some people...\" story on Instagram. You...",
+        choices: [
+          { text: "Scroll past it \u2014 vagueposts are cringe", score: 0 },
+          { text: "Notice it but resist the urge to investigate", score: 1 },
+          { text: "Screenshot it and send to one friend to decode together", score: 2 },
+          { text: "Launch a full investigation: check unfollows, cross-reference events", score: 3 }
+        ]
+      },
+      // Drama Q3
+      {
+        axis: 'drama',
+        text: "You're planning a group trip and two people want different destinations. You...",
+        choices: [
+          { text: "Go along with whatever the group decides", score: 0 },
+          { text: "Try to find a compromise that works for everyone", score: 1 },
+          { text: "Campaign hard for your pick and build a coalition", score: 2 },
+          { text: "Make a PowerPoint presentation and host a formal debate", score: 3 }
+        ]
+      },
+      // Gossip Q4
+      {
+        axis: 'gossip',
+        text: "Someone at a party tells you a secret and says \"don't tell anyone.\" You...",
+        choices: [
+          { text: "Genuinely forget about it by next morning", score: 0 },
+          { text: "Keep the secret forever \u2014 you're a vault", score: 1 },
+          { text: "Tell one person, but preface with \"you CAN'T tell anyone\"", score: 2 },
+          { text: "It's already in a group chat titled \"emergency council meeting\"", score: 3 }
+        ]
+      },
+      // Drama Q4
+      {
+        axis: 'drama',
+        text: "Someone takes your clearly-labeled lunch from the office fridge. You...",
+        choices: [
+          { text: "Just go buy another lunch, no big deal", score: 0 },
+          { text: "Post a polite note in the office Slack", score: 1 },
+          { text: "Put up a passive-aggressive sign and investigate", score: 2 },
+          { text: "Set up a hidden camera and prepare a presentation for the team meeting", score: 3 }
+        ]
+      },
+      // Gossip Q5
+      {
+        axis: 'gossip',
+        text: "Pick your ideal superpower:",
+        choices: [
+          { text: "Flight \u2014 just vibing above it all", score: 0 },
+          { text: "Invisibility \u2014 for the peace and quiet, obviously", score: 1 },
+          { text: "Mind reading \u2014 just out of curiosity, you'd be responsible", score: 2 },
+          { text: "Omniscience \u2014 you want to know EVERYTHING about EVERYONE", score: 3 }
+        ]
+      },
+      // Drama Q5
+      {
+        axis: 'drama',
+        text: "Your go-to karaoke song reveals your soul. You pick:",
+        choices: [
+          { text: "\"Lean on Me\" \u2014 supportive, not a spectacle", score: 0 },
+          { text: "\"Don't Stop Believin'\" \u2014 crowd-pleasing classic", score: 1 },
+          { text: "\"Since U Been Gone\" \u2014 passionate, pointed, a little aggressive", score: 2 },
+          { text: "\"Bohemian Rhapsody\" \u2014 all six minutes, full theatrical performance", score: 3 }
+        ]
+      },
+      // Gossip Q6
+      {
+        axis: 'gossip',
+        text: "Your friend group has a shared Google Doc. It would most likely be...",
+        choices: [
+          { text: "A trip planning spreadsheet", score: 0 },
+          { text: "A shared grocery list", score: 1 },
+          { text: "A ranking of everyone's exes", score: 2 },
+          { text: "A living, breathing dossier on everyone you've ever met", score: 3 }
+        ]
+      },
+      // Drama Q6
+      {
+        axis: 'drama',
+        text: "What's your texting style in a group chat?",
+        choices: [
+          { text: "React with emojis, rarely type actual words", score: 0 },
+          { text: "Contribute thoughtfully when you have something relevant", score: 1 },
+          { text: "You are the main character of every group chat", score: 2 },
+          { text: "You've started at least 3 chats that got \"too real\" and had to be archived", score: 3 }
+        ]
+      },
+      // Gossip Q7
+      {
+        axis: 'gossip',
+        text: "How would you describe your relationship with your phone notifications?",
+        choices: [
+          { text: "Everything's on silent. You check when you feel like it", score: 0 },
+          { text: "Standard notifications, you respond within a few hours", score: 1 },
+          { text: "Custom sounds for your inner circle so you never miss a hot take", score: 2 },
+          { text: "Separate notification tones for when specific people post on social media", score: 3 }
+        ]
+      },
+      // Drama Q7
+      {
+        axis: 'drama',
+        text: "Pick the reality TV show you'd most likely WIN:",
+        choices: [
+          { text: "The Great British Bake Off \u2014 calm, collected, tasteful", score: 0 },
+          { text: "Survivor \u2014 strategic but not mean about it", score: 1 },
+          { text: "The Bachelor/Bachelorette \u2014 you'd make \"great TV\"", score: 2 },
+          { text: "Real Housewives \u2014 born for table-flipping moments", score: 3 }
+        ]
+      }
+    ];
+
+    /* ===== STATE ===== */
+    const state = {
+      mode: null,        // 'solo' | 'group'
+      players: [],       // { name, color, gossip, drama }
+      questionIdx: 0,
+      playerIdx: 0,
+      answeredThisQ: new Set()
+    };
+
+    /* ===== SCREEN MANAGEMENT ===== */
+    function showScreen(id) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      const screen = document.getElementById(id);
+      screen.classList.remove('active');
+      // Force reflow for animation
+      void screen.offsetWidth;
+      screen.classList.add('active');
+      state.phase = id;
+    }
+
+    /* ===== SOLO MODE ===== */
+    function startSolo() {
+      state.mode = 'solo';
+      state.players = [{ name: 'You', color: PLAYER_COLORS[0], gossip: 0, drama: 0 }];
+      state.questionIdx = 0;
+      state.playerIdx = 0;
+      showScreen('quiz');
+      renderQuestion();
+    }
+
+    function startSoloWithName() {
+      const input = document.getElementById('solo-name-input');
+      const name = input.value.trim() || 'You';
+      state.mode = 'solo';
+      state.players = [{ name, color: PLAYER_COLORS[0], gossip: 0, drama: 0 }];
+      state.questionIdx = 0;
+      state.playerIdx = 0;
+      showScreen('quiz');
+      renderQuestion();
+    }
+
+    /* ===== ADD PLAYERS ===== */
+    let playerCount = 2;
+
+    function initAddPlayers() {
+      playerCount = 2;
+      const container = document.getElementById('player-inputs');
+      container.innerHTML = '';
+      for (let i = 0; i < 2; i++) addPlayerRow(i);
+      updateAddPlayerBtn();
+      validatePlayers();
+    }
+
+    function addPlayerRow(index) {
+      const container = document.getElementById('player-inputs');
+      const row = document.createElement('div');
+      row.className = 'player-input-row';
+      row.innerHTML = `
+        <div class="player-dot" style="background:${PLAYER_COLORS[index]}"></div>
+        <input type="text" placeholder="Player ${index + 1}" maxlength="20" oninput="validatePlayers()">
+        ${index >= 2 ? '<button class="remove-player" onclick="removePlayerField(this)">&times;</button>' : ''}
+      `;
+      container.appendChild(row);
+    }
+
+    function addPlayerField() {
+      if (playerCount >= 4) return;
+      addPlayerRow(playerCount);
+      playerCount++;
+      updateAddPlayerBtn();
+      validatePlayers();
+    }
+
+    function removePlayerField(btn) {
+      btn.closest('.player-input-row').remove();
+      playerCount--;
+      // Recolor dots
+      document.querySelectorAll('.player-input-row').forEach((row, i) => {
+        row.querySelector('.player-dot').style.background = PLAYER_COLORS[i];
+      });
+      updateAddPlayerBtn();
+      validatePlayers();
+    }
+
+    function updateAddPlayerBtn() {
+      document.getElementById('add-player-btn').style.display = playerCount >= 4 ? 'none' : '';
+    }
+
+    function validatePlayers() {
+      const inputs = document.querySelectorAll('#player-inputs input');
+      const filled = [...inputs].filter(i => i.value.trim().length > 0).length;
+      document.getElementById('start-quiz-btn').disabled = filled < 2;
+    }
+
+    function startGroupQuiz() {
+      const inputs = document.querySelectorAll('#player-inputs input');
+      state.mode = 'group';
+      state.players = [];
+      inputs.forEach((input, i) => {
+        const name = input.value.trim() || `Player ${i + 1}`;
+        state.players.push({ name, color: PLAYER_COLORS[i], gossip: 0, drama: 0 });
+      });
+      state.questionIdx = 0;
+      state.playerIdx = 0;
+      state.answeredThisQ = new Set();
+      showScreen('quiz');
+      renderQuestion();
+    }
+
+    // Initialize add-players when screen is shown
+    const origShowScreen = showScreen;
+    showScreen = function(id) {
+      if (id === 'add-players') initAddPlayers();
+      origShowScreen(id);
+    };
+
+    /* ===== QUIZ ENGINE ===== */
+    function renderQuestion() {
+      const q = QUESTIONS[state.questionIdx];
+      const total = QUESTIONS.length;
+
+      // Progress
+      const pct = (state.questionIdx / total) * 100;
+      document.getElementById('progress-fill').style.width = pct + '%';
+      document.getElementById('question-counter').textContent = `Question ${state.questionIdx + 1} of ${total}`;
+
+      // Question text
+      const card = document.getElementById('question-card');
+      card.classList.remove('entering');
+      void card.offsetWidth;
+      card.classList.add('entering');
+      document.getElementById('question-text').textContent = q.text;
+
+      // Player tabs (group mode)
+      const tabsEl = document.getElementById('player-tabs');
+      if (state.mode === 'group') {
+        tabsEl.innerHTML = state.players.map((p, i) => {
+          let cls = 'player-tab';
+          if (i === state.playerIdx) cls += ' active';
+          if (state.answeredThisQ.has(i)) cls += ' done';
+          const bg = i === state.playerIdx ? p.color : '';
+          return `<span class="${cls}" style="${bg ? 'background:' + bg + ';border-color:transparent;' : ''}">${p.name}</span>`;
+        }).join('');
+        tabsEl.style.display = '';
+      } else {
+        tabsEl.style.display = 'none';
+      }
+
+      // Answer buttons
+      const answersEl = document.getElementById('answers');
+      answersEl.innerHTML = q.choices.map((c, i) => {
+        return `<button class="answer-btn" onclick="selectAnswer(${i})">${c.text}</button>`;
+      }).join('');
+    }
+
+    function selectAnswer(choiceIdx) {
+      const q = QUESTIONS[state.questionIdx];
+      const score = q.choices[choiceIdx].score;
+      const player = state.players[state.playerIdx];
+
+      // Accumulate score
+      if (q.axis === 'gossip') {
+        player.gossip += score;
+      } else {
+        player.drama += score;
+      }
+
+      // Highlight selected button briefly
+      const btns = document.querySelectorAll('.answer-btn');
+      btns.forEach(b => b.style.pointerEvents = 'none');
+      btns[choiceIdx].classList.add('selected');
+
+      setTimeout(() => {
+        if (state.mode === 'group') {
+          state.answeredThisQ.add(state.playerIdx);
+          // Find next unanswered player
+          const nextPlayer = findNextPlayer();
+          if (nextPlayer !== null) {
+            state.playerIdx = nextPlayer;
+            renderQuestion();
+            return;
+          }
+        }
+
+        // Advance to next question
+        state.questionIdx++;
+        if (state.questionIdx >= QUESTIONS.length) {
+          finishQuiz();
+          return;
+        }
+
+        state.playerIdx = 0;
+        state.answeredThisQ = new Set();
+        renderQuestion();
+      }, 350);
+    }
+
+    function findNextPlayer() {
+      for (let i = state.playerIdx + 1; i < state.players.length; i++) {
+        if (!state.answeredThisQ.has(i)) return i;
+      }
+      return null;
+    }
+
+    /* ===== SCORING & RESULTS ===== */
+    function finishQuiz() {
+      const maxGossip = 7 * 3; // 21
+      const maxDrama = 7 * 3;
+
+      state.players.forEach(p => {
+        p.gossipNorm = (p.gossip / maxGossip) * 2 - 1;
+        p.dramaNorm = (p.drama / maxDrama) * 2 - 1;
+        p.type = getType(p.gossipNorm, p.dramaNorm);
+      });
+
+      document.getElementById('progress-fill').style.width = '100%';
+      saveResults();
+      showScreen('results');
+      setTimeout(drawGraph, 300);
+      renderResultCards();
+    }
+
+    function getType(gossip, drama) {
+      if (gossip > 0 && drama > 0) return 'witch';
+      if (gossip > 0 && drama <= 0) return 'owl';
+      if (gossip <= 0 && drama > 0) return 'housecat';
+      return 'pastor';
+    }
+
+    /* ===== GRAPH RENDERING ===== */
+    function drawGraph() {
+      drawGraphOn('graph-canvas', state.players);
+    }
+
+    function drawArrow(ctx, x, y, dir) {
+      const s = 6;
+      ctx.beginPath();
+      if (dir === 'right') { ctx.moveTo(x, y); ctx.lineTo(x - s, y - s / 2); ctx.lineTo(x - s, y + s / 2); }
+      if (dir === 'left') { ctx.moveTo(x, y); ctx.lineTo(x + s, y - s / 2); ctx.lineTo(x + s, y + s / 2); }
+      if (dir === 'up') { ctx.moveTo(x, y); ctx.lineTo(x - s / 2, y + s); ctx.lineTo(x + s / 2, y + s); }
+      if (dir === 'down') { ctx.moveTo(x, y); ctx.lineTo(x - s / 2, y - s); ctx.lineTo(x + s / 2, y - s); }
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    function animateDot(ctx, cx, cy, plotW, plotH, player, size) {
+      const targetX = cx + player.dramaNorm * (plotW / 2) * 0.85;
+      const targetY = cy - player.gossipNorm * (plotH / 2) * 0.85;
+      const radius = Math.max(12, size * 0.028);
+
+      // Draw dot
+      ctx.beginPath();
+      ctx.arc(targetX, targetY, radius, 0, Math.PI * 2);
+      ctx.fillStyle = player.color;
+      ctx.fill();
+      ctx.strokeStyle = '#FFFFFF';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+
+      // Drop shadow effect
+      ctx.beginPath();
+      ctx.arc(targetX, targetY + 2, radius, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(0,0,0,0.08)';
+      ctx.fill();
+
+      // Redraw dot on top of shadow
+      ctx.beginPath();
+      ctx.arc(targetX, targetY, radius, 0, Math.PI * 2);
+      ctx.fillStyle = player.color;
+      ctx.fill();
+      ctx.strokeStyle = '#FFFFFF';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+
+      // Name label
+      ctx.fillStyle = '#1F1235';
+      ctx.font = `700 ${Math.max(12, size * 0.028)}px -apple-system, BlinkMacSystemFont, sans-serif`;
+      ctx.textAlign = 'center';
+      const labelY = player.gossipNorm > 0 ? targetY + radius + 18 : targetY - radius - 8;
+      ctx.fillText(player.name, targetX, labelY);
+    }
+
+    /* ===== RESULT CARDS ===== */
+    function renderResultCards() {
+      const container = document.getElementById('result-cards');
+      container.innerHTML = state.players.map((p, i) => {
+        const t = TYPES[p.type];
+        return `
+          <div class="result-card" style="animation-delay:${0.8 + i * 0.4}s;border-left:5px solid ${t.color}">
+            <div class="result-card-dot" style="background:${p.color}"></div>
+            <div class="result-card-info">
+              <div class="result-card-name">${p.name}</div>
+              <div class="result-card-type" style="color:${t.color}">${t.emoji} ${t.name}</div>
+              <div class="result-card-tagline">${t.tagline}</div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // Reset note input
+      const noteEl = document.getElementById('result-note');
+      const noteBtnEl = document.getElementById('save-note-btn');
+      noteEl.value = '';
+      noteEl.disabled = false;
+      noteBtnEl.textContent = 'Save Note';
+      noteBtnEl.disabled = false;
+    }
+
+    /* ===== LOCALSTORAGE & ALL RESULTS ===== */
+    const STORAGE_KEY = 'gossip-quiz-results';
+
+    function saveResults() {
+      try {
+        const existing = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+        const timestamp = Date.now();
+        state.players.forEach(p => {
+          existing.push({
+            name: p.name,
+            gossipNorm: p.gossipNorm,
+            dramaNorm: p.dramaNorm,
+            type: p.type,
+            timestamp
+          });
+        });
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(existing));
+      } catch (e) { /* localStorage unavailable */ }
+    }
+
+    function saveNote() {
+      const noteText = document.getElementById('result-note').value.trim();
+      if (!noteText) return;
+      try {
+        const existing = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+        // Attach note to the most recently added entries (current session's players)
+        const playerNames = state.players.map(p => p.name);
+        // Find the last entries matching current players and add note
+        for (let i = existing.length - 1; i >= 0 && playerNames.length > 0; i--) {
+          const idx = playerNames.indexOf(existing[i].name);
+          if (idx !== -1) {
+            existing[i].note = noteText;
+            playerNames.splice(idx, 1);
+          }
+        }
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(existing));
+        document.getElementById('save-note-btn').textContent = 'Saved!';
+        document.getElementById('save-note-btn').disabled = true;
+        document.getElementById('result-note').disabled = true;
+      } catch (e) { /* localStorage unavailable */ }
+    }
+
+    function loadAllResults() {
+      try {
+        return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+      } catch (e) { return []; }
+    }
+
+    function showAllResults() {
+      const all = loadAllResults();
+      if (all.length === 0) {
+        alert('No results saved yet!');
+        return;
+      }
+
+      // Assign colors cycling through the palette
+      const PALETTE = [
+        '#FF3B6B', '#3B82F6', '#10B981', '#FBBF24',
+        '#8B5CF6', '#F97316', '#EC4899', '#06B6D4',
+        '#84CC16', '#F43F5E', '#6366F1', '#14B8A6'
+      ];
+      const allPlayers = all.map((r, i) => ({
+        name: r.name,
+        color: PALETTE[i % PALETTE.length],
+        gossipNorm: r.gossipNorm,
+        dramaNorm: r.dramaNorm,
+        type: r.type,
+        note: r.note || ''
+      }));
+
+      document.getElementById('all-results-count').textContent = allPlayers.length + ' participant' + (allPlayers.length !== 1 ? 's' : '');
+      showScreen('all-results');
+      setTimeout(() => drawGraphOn('all-graph-canvas', allPlayers), 300);
+      renderAllResultCards(allPlayers);
+    }
+
+    function drawGraphOn(canvasId, players) {
+      const canvas = document.getElementById(canvasId);
+      const wrapper = canvas.parentElement;
+      const size = wrapper.clientWidth;
+      const dpr = window.devicePixelRatio || 1;
+
+      canvas.width = size * dpr;
+      canvas.height = size * dpr;
+      canvas.style.width = size + 'px';
+      canvas.style.height = size + 'px';
+
+      const ctx = canvas.getContext('2d');
+      ctx.scale(dpr, dpr);
+
+      const pad = 45;
+      const cx = size / 2;
+      const cy = size / 2;
+      const plotW = size - pad * 2;
+      const plotH = size - pad * 2;
+
+      // Background
+      ctx.fillStyle = '#FFFFFF';
+      ctx.beginPath();
+      ctx.roundRect(0, 0, size, size, 16);
+      ctx.fill();
+
+      // Quadrant fills
+      const quadrants = [
+        { x: pad, y: pad, w: plotW / 2, h: plotH / 2, color: 'rgba(59, 130, 246, 0.08)' },
+        { x: cx, y: pad, w: plotW / 2, h: plotH / 2, color: 'rgba(139, 92, 246, 0.08)' },
+        { x: pad, y: cy, w: plotW / 2, h: plotH / 2, color: 'rgba(16, 185, 129, 0.08)' },
+        { x: cx, y: cy, w: plotW / 2, h: plotH / 2, color: 'rgba(249, 115, 22, 0.08)' },
+      ];
+      quadrants.forEach(q => {
+        ctx.fillStyle = q.color;
+        ctx.fillRect(q.x, q.y, q.w, q.h);
+      });
+
+      // Axes
+      ctx.strokeStyle = '#CBD5E1';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(pad, cy); ctx.lineTo(size - pad, cy);
+      ctx.moveTo(cx, pad); ctx.lineTo(cx, size - pad);
+      ctx.stroke();
+
+      // Arrowheads
+      ctx.fillStyle = '#CBD5E1';
+      drawArrow(ctx, size - pad, cy, 'right');
+      drawArrow(ctx, pad, cy, 'left');
+      drawArrow(ctx, cx, pad, 'up');
+      drawArrow(ctx, cx, size - pad, 'down');
+
+      // Axis labels
+      ctx.fillStyle = '#64748B';
+      ctx.font = `600 ${Math.max(10, size * 0.024)}px -apple-system, BlinkMacSystemFont, sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.fillText('Likes to Gossip', cx, pad - 14);
+      ctx.fillText("Doesn't Like to Gossip", cx, size - pad + 22);
+      ctx.save();
+      ctx.translate(pad - 14, cy);
+      ctx.rotate(-Math.PI / 2);
+      ctx.fillText("Doesn't Cause Drama", 0, 0);
+      ctx.restore();
+      ctx.save();
+      ctx.translate(size - pad + 14, cy);
+      ctx.rotate(Math.PI / 2);
+      ctx.fillText('Causes Drama', 0, 0);
+      ctx.restore();
+
+      // Draw all player dots first (so labels render on top)
+      players.forEach((p, i) => {
+        animateDot(ctx, cx, cy, plotW, plotH, p, size);
+      });
+
+      // Quadrant type labels (drawn after dots so they stay visible)
+      const labelSize = Math.max(13, size * 0.032);
+      const emojiSize = Math.max(20, size * 0.055);
+      const typeLabels = [
+        { text: 'Owl', emoji: '\u{1F989}', x: pad + plotW * 0.17, y: pad + plotH * 0.15, color: '#3B82F6' },
+        { text: 'Witch', emoji: '\u{1F9D9}', x: cx + plotW * 0.33, y: pad + plotH * 0.15, color: '#8B5CF6' },
+        { text: 'Pastor', emoji: '\u{1F607}', x: pad + plotW * 0.17, y: cy + plotH * 0.38, color: '#10B981' },
+        { text: 'House Cat', emoji: '\u{1F408}', x: cx + plotW * 0.33, y: cy + plotH * 0.38, color: '#F97316' },
+      ];
+      typeLabels.forEach(t => {
+        ctx.font = `${emojiSize}px sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.fillText(t.emoji, t.x, t.y);
+        ctx.fillStyle = t.color;
+        ctx.font = `800 ${labelSize}px -apple-system, BlinkMacSystemFont, sans-serif`;
+        ctx.fillText(t.text, t.x, t.y + emojiSize * 0.9);
+        ctx.fillStyle = '#64748B';
+      });
+    }
+
+    function renderAllResultCards(players) {
+      const container = document.getElementById('all-result-cards');
+      container.innerHTML = players.map((p, i) => {
+        const t = TYPES[p.type];
+        const noteHtml = p.note ? `<div class="note-bubble">"${escapeHtml(p.note)}"</div>` : '';
+        return `
+          <div class="result-card" style="animation-delay:${0.3 + i * 0.15}s;border-left:5px solid ${t.color}">
+            <div class="result-card-dot" style="background:${p.color}"></div>
+            <div class="result-card-info">
+              <div class="result-card-name">${escapeHtml(p.name)}</div>
+              <div class="result-card-type" style="color:${t.color}">${t.emoji} ${t.name}</div>
+              <div class="result-card-tagline">${t.tagline}</div>
+              ${noteHtml}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    function clearAllResults() {
+      if (confirm('Clear all saved results? This cannot be undone.')) {
+        localStorage.removeItem(STORAGE_KEY);
+        showScreen('splash');
+      }
+    }
+
+    /* ===== RESTART ===== */
+    function restart() {
+      state.mode = null;
+      state.players = [];
+      state.questionIdx = 0;
+      state.playerIdx = 0;
+      state.answeredThisQ = new Set();
+      showScreen('splash');
+    }
+
+    /* ===== CANVAS ROUNDRECT POLYFILL ===== */
+    if (!CanvasRenderingContext2D.prototype.roundRect) {
+      CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+        if (typeof r === 'number') r = [r, r, r, r];
+        this.moveTo(x + r[0], y);
+        this.lineTo(x + w - r[1], y);
+        this.quadraticCurveTo(x + w, y, x + w, y + r[1]);
+        this.lineTo(x + w, y + h - r[2]);
+        this.quadraticCurveTo(x + w, y + h, x + w - r[2], y + h);
+        this.lineTo(x + r[3], y + h);
+        this.quadraticCurveTo(x, y + h, x, y + h - r[3]);
+        this.lineTo(x, y + r[0]);
+        this.quadraticCurveTo(x, y, x + r[0], y);
+        this.closePath();
+      };
+    }
+  </script>
+</body>
+</html>
