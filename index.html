@@ -557,6 +557,9 @@
     <div id="all-results" class="screen">
       <div class="results-title">Everyone's Results</div>
       <p style="color:var(--text-light);text-align:center;margin-bottom:0.5rem" id="all-results-count"></p>
+      <div id="all-results-loading" style="display:none;text-align:center;padding:2rem;">
+        <p style="color:var(--text-light);font-size:1.1rem;">Loading results from the cloud ☁️</p>
+      </div>
       <div class="graph-wrapper">
         <canvas id="all-graph-canvas"></canvas>
       </div>
@@ -568,7 +571,24 @@
     </div>
   </div>
 
+  <!-- Firebase SDK (compat for no-build-tool usage) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
   <script>
+    /* ===== FIREBASE SETUP ===== */
+    const firebaseConfig = {
+      apiKey: "AIzaSyDPbMaCDiBm49wzFBz-BH-sEU8ioAPoFxQ",
+      authDomain: "gossipgame-dbba0.firebaseapp.com",
+      projectId: "gossipgame-dbba0",
+      storageBucket: "gossipgame-dbba0.firebasestorage.app",
+      messagingSenderId: "711755028762",
+      appId: "1:711755028762:web:353b981e9dd231868f34a3"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const resultsCollection = db.collection('results');
+
     /* ===== DATA ===== */
     const PLAYER_COLORS = ['#FF3B6B', '#3B82F6', '#10B981', '#FBBF24'];
 
@@ -1071,31 +1091,42 @@
     /* ===== LOCALSTORAGE & ALL RESULTS ===== */
     const STORAGE_KEY = 'gossip-quiz-results';
 
+    let lastSavedDocIds = []; // Track Firestore doc IDs for note attachment
+
     function saveResults() {
+      const timestamp = Date.now();
+      lastSavedDocIds = [];
+      const entries = state.players.map(p => ({
+        name: p.name,
+        gossipNorm: p.gossipNorm,
+        dramaNorm: p.dramaNorm,
+        type: p.type,
+        timestamp
+      }));
+
+      // Save to localStorage (instant, offline fallback)
       try {
         const existing = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-        const timestamp = Date.now();
-        state.players.forEach(p => {
-          existing.push({
-            name: p.name,
-            gossipNorm: p.gossipNorm,
-            dramaNorm: p.dramaNorm,
-            type: p.type,
-            timestamp
-          });
-        });
+        entries.forEach(e => existing.push(e));
         localStorage.setItem(STORAGE_KEY, JSON.stringify(existing));
       } catch (e) { /* localStorage unavailable */ }
+
+      // Save to Firestore (shared cloud database)
+      entries.forEach(entry => {
+        resultsCollection.add(entry)
+          .then(docRef => lastSavedDocIds.push(docRef.id))
+          .catch(err => console.warn('Cloud save failed:', err));
+      });
     }
 
     function saveNote() {
       const noteText = document.getElementById('result-note').value.trim();
       if (!noteText) return;
+
+      // Update localStorage
       try {
         const existing = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-        // Attach note to the most recently added entries (current session's players)
         const playerNames = state.players.map(p => p.name);
-        // Find the last entries matching current players and add note
         for (let i = existing.length - 1; i >= 0 && playerNames.length > 0; i--) {
           const idx = playerNames.indexOf(existing[i].name);
           if (idx !== -1) {
@@ -1104,22 +1135,50 @@
           }
         }
         localStorage.setItem(STORAGE_KEY, JSON.stringify(existing));
-        document.getElementById('save-note-btn').textContent = 'Saved!';
-        document.getElementById('save-note-btn').disabled = true;
-        document.getElementById('result-note').disabled = true;
       } catch (e) { /* localStorage unavailable */ }
+
+      // Update Firestore documents with the note
+      lastSavedDocIds.forEach(docId => {
+        resultsCollection.doc(docId).update({ note: noteText })
+          .catch(err => console.warn('Cloud note save failed:', err));
+      });
+
+      document.getElementById('save-note-btn').textContent = 'Saved!';
+      document.getElementById('save-note-btn').disabled = true;
+      document.getElementById('result-note').disabled = true;
     }
 
-    function loadAllResults() {
+    async function loadAllResults() {
+      // Try Firestore first (shared cloud data)
+      try {
+        const snapshot = await resultsCollection
+          .orderBy('timestamp', 'desc')
+          .limit(500)
+          .get();
+        const cloudResults = snapshot.docs.map(doc => doc.data());
+        if (cloudResults.length > 0) return cloudResults;
+      } catch (err) {
+        console.warn('Cloud load failed, falling back to localStorage:', err);
+      }
+      // Fallback to localStorage if cloud fails or is empty
       try {
         return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
       } catch (e) { return []; }
     }
 
-    function showAllResults() {
-      const all = loadAllResults();
+    async function showAllResults() {
+      showScreen('all-results');
+      document.getElementById('all-results-loading').style.display = 'block';
+      document.getElementById('all-result-cards').innerHTML = '';
+      document.getElementById('all-results-count').textContent = '';
+
+      const all = await loadAllResults();
+
+      document.getElementById('all-results-loading').style.display = 'none';
+
       if (all.length === 0) {
         alert('No results saved yet!');
+        showScreen('splash');
         return;
       }
 
@@ -1139,7 +1198,6 @@
       }));
 
       document.getElementById('all-results-count').textContent = allPlayers.length + ' participant' + (allPlayers.length !== 1 ? 's' : '');
-      showScreen('all-results');
       setTimeout(() => drawGraphOn('all-graph-canvas', allPlayers), 300);
       renderAllResultCards(allPlayers);
     }
@@ -1265,7 +1323,7 @@
     }
 
     function clearAllResults() {
-      if (confirm('Clear all saved results? This cannot be undone.')) {
+      if (confirm('Clear your local results? Cloud results from all visitors will remain.')) {
         localStorage.removeItem(STORAGE_KEY);
         showScreen('splash');
       }
